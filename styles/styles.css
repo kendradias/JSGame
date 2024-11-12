@@ -5,6 +5,28 @@
     padding: 0;
 }
 
+#game-board {
+    width: 800px;
+    min-height: 1000px;
+    background: blue;
+    padding: 1rem;
+    
+}
+
+.screen-content {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+}
+
 body {
-    background-color: pink;
+    background-color: black;
+    color: white;
+    display: flex;
+    justify-content: center; 
+    align-items: center;    
+    min-height: 100vh; 
 }
