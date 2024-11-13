@@ -6,11 +6,17 @@
 }
 
 #game-board {
-    width: 800px;
-    min-height: 1000px;
-    background: blue;
+    background-color: black;
     padding: 1rem;
-    
+    min-width: 800px;
+    min-height: 1000px;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+#play-pause-btn, #end-game-btn, #reset-btn {
+    display: inline-block;
 }
 
 .screen-content {
@@ -23,10 +29,12 @@
 }
 
 body {
-    background-color: black;
     color: white;
+    background-image: url('/images/retrogame.jpg');
+    background-size: cover;
+    background-position: center;
     display: flex;
-    justify-content: center; 
+    justify-content: center; /* Horizontally center */
     align-items: center;    
     min-height: 100vh; 
 }

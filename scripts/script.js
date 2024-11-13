@@ -1,5 +1,41 @@
 'use strict';
 
+// canvas reference
+const canvas = document.querySelector('canvas');
+const c = canvas.getContext('2d');
+
+if(!c) {
+    console.log('error');
+}
+
+//ensure canvas is width and height of gameboard
+const gameBoard = document.getElementById('game-board');
+canvas.width = gameBoard.offsetWidth;
+canvas.height = gameBoard.offsetHeight;
+
+//boundary class
+class Boundary {
+    constructor({position}) {
+        this.position = position;
+        this.width = 40;
+        this.height = 40;
+    }
+    draw() {
+        c.fillStyle = 'blue'
+        c.fillRect(this.position.x, this.position.y, 
+            this.width, this.height)
+    }
+}
+
+const boundary = new Boundary({
+    position: {
+        x: 0,
+        y: 0
+    }
+})
+
+boundary.draw();
+
 const game = {
     isRunning: false,
     wasRunning: false,
@@ -31,7 +67,7 @@ const game = {
 
 //Event Listeners
 $(document).ready(function() {
-    game.switchScreen('welcome-screen');
+    game.switchScreen('game-screen');
 
     //WELCOME SCREEN BUTTONS
     //go to instructions screen
