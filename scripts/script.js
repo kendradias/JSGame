@@ -3,11 +3,6 @@
 // canvas reference
 const canvas = document.querySelector('canvas');
 const c = canvas.getContext('2d');
-
-if(!c) {
-    console.log('error');
-}
-
 //ensure canvas is width and height of gameboard
 const gameBoard = document.getElementById('game-board');
 canvas.width = gameBoard.offsetWidth;
@@ -15,6 +10,8 @@ canvas.height = gameBoard.offsetHeight;
 
 //boundary class
 class Boundary {
+    static width = 40;
+    static height = 40;
     constructor({position}) {
         this.position = position;
         this.width = 40;
@@ -26,16 +23,74 @@ class Boundary {
             this.width, this.height)
     }
 }
-
-const boundary = new Boundary({
-    position: {
-        x: 0,
-        y: 0
+//player class
+class Player {
+    constructor({position, velocity}) {
+        this.position = position
+        this.velocity = velocity
+        this.radius = 15
     }
+    draw() {
+        c.beginPath()
+        c.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2)
+        c.fillStyle = 'yellow'
+        c.fill()
+        c.closePath()
+    }
+    update() {
+        this.draw()
+        this.position.x += this.velocity.x
+        this.position.y += this.velocity.y
+    }
+}
+// MAP object 
+const map = [
+    ['-','-','-','-','-','-'],
+    ['-',' ',' ',' ',' ','-'],
+    ['-',' ','-','-',' ','-'],
+    ['-',' ',' ',' ',' ','-'],
+    ['-','-','-','-','-','-']
+]
+// create boundaries as an array 
+const boundaries = []
+
+// instantiate new player
+const player = new Player({
+    position: {
+        x: Boundary.width + Boundary.width / 2,
+        y: Boundary.height + Boundary.height / 2
+    },
+    velocity: {
+        x:0,
+        y:0
+    }
+});
+
+map.forEach((row, i) => {
+    row.forEach((symbol, j) => {
+        switch (symbol) {
+            case '-':
+                boundaries.push(
+                    new Boundary({
+                        position: {
+                            x: Boundary.width * j,
+                            y: Boundary.width * i
+                        }
+                    })
+                )
+                break;
+        }
+    })
 })
 
-boundary.draw();
+// draw boundaries
+boundaries.forEach((boundary) => {
+    boundary.draw();
+})
+//draw player
+player.draw()
 
+// Game object 
 const game = {
     isRunning: false,
     wasRunning: false,
@@ -66,6 +121,26 @@ const game = {
 }
 
 //Event Listeners
+//Player Movement Key event Listeners
+addEventListener('keydown', ({key}) => {
+    switch (key) {
+        case 'ArrowUp':
+            player.velocity.y = -5
+            break
+        case 'ArrowLeft':
+            player.velocity.x = -5
+            break
+        case 'ArrowDown':
+            player.velocity.y = 5
+            break
+        case 'ArrowRight':
+            player.velocity.x = 5
+            break
+    }
+})
+
+
+
 $(document).ready(function() {
     game.switchScreen('game-screen');
 

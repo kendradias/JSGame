@@ -15,9 +15,6 @@
     position: relative;
 }
 
-#play-pause-btn, #end-game-btn, #reset-btn {
-    display: inline-block;
-}
 
 .screen-content {
     display: flex;
