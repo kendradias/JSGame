@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="./styles/styles.css"/>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Micro+5+Charted&family=Sixtyfour+Convergence&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bungee+Shade&family=Micro+5&family=Micro+5+Charted&family=Rubik+Puddles&family=VT323&display=swap" rel="stylesheet">
     <script src="./scripts/script.js" defer></script>
     <title>Hungry Hero</title>
 </head>
@@ -20,14 +20,18 @@
         <div id="game-board">
             <div id="welcome-screen" class="screen">
                 <div class="screen-content">
-                    <p>Welcome Screen</p>
-                    <button id="instructions-btn" class="btn btn-primary">Instructions</button>
+                    <h1>Welcome!</h1>
+                    <div id="player-form-container">
+                        <p>Please Enter your Username: </p>
+                        <input type="text" id="player-name-input" placeholder="Enter Name">
+                        <button id="instructions-btn" class="btn btn-primary">Go To Game</button>
+                    </div>
                 </div>
             </div>
     
             <div id="instructions-screen" class="screen">
                 <div class="screen-content">
-                    <p>Instructions Screen</p>
+                    <h1>Instructions</h1>
                     <button id="play-game-btn" class="btn btn-primary">Start Game</button>
                 </div>
             </div>
@@ -58,7 +62,7 @@
     
             <div id="game-over-screen" class="screen">
                 <div class="screen-content">
-                    <p>Game Over!</p>
+                    <h1>Game Over!</h1>
                     <button id="play-again-btn" class="btn btn-primary">Play Again</button>
                     <button id="quit-btn" class="btn btn-danger">Quit</button>
                 </div>

@@ -17,20 +17,40 @@ body {
     justify-content: center; /* Horizontally center */
     align-items: center;    
     min-height: 100vh; 
-    font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    font-family:"VT323";
+    font-size: 25px;
 }
 
 /* Google Fonts */
 
+.bungee-shade-regular {
+    font-family: "Bungee Shade", serif;
+    font-weight: 400;
+    font-style: normal;
+}
+
 .micro-5-charted-regular {
-    font-family: "Micro 5 Charted", sans-serif;
+    font-family: "Micro 5 Charted", serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+  
+
+.vt323-regular {
+    font-family: "VT323", monospace;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.rubik-puddles-regular {
+    font-family: "Rubik Puddles", serif;
     font-weight: 400;
     font-style: normal;
 }
 
 header h1 {
     font-family: "Micro 5 Charted";
-    font-size: 80px;
+    font-size: 60px;
     text-align: center;
 }
 
