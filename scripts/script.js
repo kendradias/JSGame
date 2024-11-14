@@ -142,6 +142,7 @@ addEventListener('keydown', ({key}) => {
 
 
 $(document).ready(function() {
+    //initial screen upon loading - currently game screen for building purposes
     game.switchScreen('game-screen');
 
     //WELCOME SCREEN BUTTONS
