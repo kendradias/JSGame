@@ -50,7 +50,7 @@ body {
 
 header h1 {
     font-family: "Micro 5 Charted";
-    font-size: 60px;
+    font-size: 70px;
     text-align: center;
 }
 
@@ -84,7 +84,7 @@ header h1 {
     border: none;
     background-color: transparent;
     color: white;
-    font-size: 18px;
+    font-size: 35px;
     cursor: pointer;
     padding: 1rem;
 }
