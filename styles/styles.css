@@ -54,6 +54,12 @@ header h1 {
     text-align: center;
 }
 
+.micro-5-regular {
+    font-family: "Micro 5", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}
+
 /* Game Board Styles */  
 
 #game-board {
@@ -78,9 +84,14 @@ header h1 {
     gap: 1rem;
 }
 
+.screen-content h1 {
+    font-family: "Micro 5";
+    font-size: 50px
+}
+
 /* Game Screen */
 
-.game-screen-buttons, button {
+.game-screen-buttons button {
     border: none;
     background-color: transparent;
     color: white;
