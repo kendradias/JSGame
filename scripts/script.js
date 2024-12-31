@@ -6,9 +6,7 @@ const game = {
     wasRunning: false,
     isPaused: false,
     currentScreen: 'welcome-screen',
-    $progressBar: $('#progress-bar'),
     $timeDisplay: $('#time-display'),
-    
 
   //switch screen function
   switchScreen: function(screen) {
@@ -45,16 +43,55 @@ const game = {
 // canvas reference
 const canvas = document.querySelector('canvas')
 const c = canvas.getContext('2d')
-
-//score 
-document.addEventListener('DOMContentLoaded', () => {
-    const scoreEl = document.querySelector('#scoreEl')
-});
-
 //ensure canvas is width and height of gameboard
 const gameBoard = document.getElementById('game-board')
 canvas.width = gameBoard.offsetWidth
 canvas.height = gameBoard.offsetHeight
+
+
+// Keys Object 
+const keys = {
+    w: {
+        pressed: false
+    }, 
+    a: {
+        pressed: false
+    }, 
+    d: {
+        pressed: false
+    }, 
+    s: {
+        pressed: false
+    }, 
+}
+// last key to update when a new key is pressed
+let lastKey = '';
+
+// MAP Object 
+const map = [
+    ['-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-'],
+    ['-',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','-'],
+    ['-',' ','-',' ','-','-','-',' ','-',' ',' ','-',' ','-','-','-',' ','-',' ','-'],
+    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
+    ['-',' ','-','-',' ',' ',' ','-',' ',' ',' ',' ','-',' ',' ',' ','-','-',' ','-'],
+    ['-',' ','-','-',' ',' ',' ','-','-','-','-','-','-',' ',' ',' ','-','-',' ','-'],
+    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
+    ['-',' ','-',' ','-','-','-',' ','-',' ',' ','-',' ','-','-','-',' ','-',' ','-'],
+    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
+    ['-',' ','-','-',' ',' ',' ','-','-','-','-','-','-',' ',' ',' ','-','-',' ','-'],
+    ['-',' ','-','-',' ',' ',' ','-',' ',' ',' ',' ','-',' ',' ',' ','-','-',' ','-'],
+    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
+    ['-',' ','-',' ','-','-','-',' ','-',' ',' ','-',' ','-','-','-',' ','-',' ','-'],
+    ['-',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','-'],
+    ['-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-'],
+]
+
+//score HTML element
+document.addEventListener('DOMContentLoaded', () => {
+    const scoreEl = document.querySelector('#scoreEl')
+});
+//score property that updates upon pellet collision
+let score = 0
 
 
 //Boundary class
@@ -88,6 +125,84 @@ class Player {
         c.fill()
         c.closePath()
     }
+
+     //handling movement for player, checking for boundary collisions and reset last key to enable a change in direction to the newest key pressed
+     handleMovement(keys, lastKey, boundaries) {
+        if (keys.w.pressed && lastKey === 'w') {
+            for (let i = 0; i < boundaries.length; i++) {
+                const boundary = boundaries[i]
+                if (
+                    circleCollidesWithRectangle({
+                        circle: {...this, velocity: {
+                            x: 0,
+                            y: -5
+                        }},
+                        rectangle: boundary
+                    })
+                ) {
+                    this.velocity.y = 0
+                    break
+                } else {
+                    this.velocity.y = -5
+                }
+            }
+        } else if (keys.a.pressed && lastKey === 'a') {
+            for (let i = 0; i < boundaries.length; i++) {
+                const boundary = boundaries[i]
+                if (
+                    circleCollidesWithRectangle({
+                        circle: {...this, velocity: {
+                            x: -5,
+                            y: 0
+                        }},
+                        rectangle: boundary
+                    })
+                ) {
+                    this.velocity.x = 0
+                    break
+                } else {
+                    this.velocity.x = -5
+                }
+            }
+        } else if (keys.s.pressed && lastKey === 's') {
+            for (let i = 0; i < boundaries.length; i++) {
+                const boundary = boundaries[i]
+                if (
+                    circleCollidesWithRectangle({
+                        circle: {...this, velocity: {
+                            x: 0,
+                            y: 5
+                        }},
+                        rectangle: boundary
+                    })
+                ) {
+                    this.velocity.y = 0
+                    break
+                } else {
+                    this.velocity.y = 5
+                }
+            }
+        } else if (keys.d.pressed && lastKey === 'd') {
+            for (let i = 0; i < boundaries.length; i++) {
+                const boundary = boundaries[i]
+                if (
+                    circleCollidesWithRectangle({
+                        circle: {...this, velocity: {
+                            x: 5,
+                            y: 0
+                        }},
+                        rectangle: boundary
+                    })
+                ) {
+                    this.velocity.x = 0
+                    break
+                } else {
+                    this.velocity.x = 5
+                }
+            }
+        }
+    }
+
     update() {
         this.draw()
         this.position.x += this.velocity.x
@@ -120,7 +235,7 @@ class Enemy{
         //Force direction change periodically to ecourage exploration
         if (this.moveTimer >= this.directionChangeInterval) {
             this.changeDirection(true) // indicates forced change
-            this.moveTimer = 0
+            this.moveTimer = 0 //reset timer
             return
         }
 
@@ -174,44 +289,44 @@ class Enemy{
                     break
             }
 
-                        // Test if moving in this direction would cause collision
-                        let wouldCollide = false
-                        boundaries.forEach(boundary => {
-                            if (circleCollidesWithRectangle({
-                                circle: {
-                                    ...this,
-                                    velocity: testVelocity
-                                },
-                                rectangle: boundary
-                            })) {
-                                wouldCollide = true
-                            }
-                        })
-                        return !wouldCollide
-                    })
-            
-                    if (validDirections.length > 0) {
-                        // Choose random valid direction
-                        const newDirection = validDirections[Math.floor(Math.random() * validDirections.length)]
-                        switch(newDirection) {
-                            case 'up':
-                                this.velocity.x = 0
-                                this.velocity.y = -this.speed
-                                break
-                            case 'down':
-                                this.velocity.x = 0
-                                this.velocity.y = this.speed
-                                break
-                            case 'left':
-                                this.velocity.x = -this.speed
-                                this.velocity.y = 0
-                                break
-                            case 'right':
-                                this.velocity.x = this.speed
-                                this.velocity.y = 0
-                                break
-                        }
+                // Test if moving in this direction would cause collision
+                let wouldCollide = false
+                boundaries.forEach(boundary => {
+                    if (circleCollidesWithRectangle({
+                        circle: {
+                            ...this,
+                            velocity: testVelocity
+                        },
+                        rectangle: boundary
+                    })) {
+                        wouldCollide = true
                     }
+                })
+                return !wouldCollide
+            })
+
+            if (validDirections.length > 0) {
+                // Choose random valid direction
+                const newDirection = validDirections[Math.floor(Math.random() * validDirections.length)]
+                switch(newDirection) {
+                    case 'up':
+                        this.velocity.x = 0
+                        this.velocity.y = -this.speed
+                        break
+                    case 'down':
+                        this.velocity.x = 0
+                        this.velocity.y = this.speed
+                        break
+                    case 'left':
+                        this.velocity.x = -this.speed
+                        this.velocity.y = 0
+                        break
+                    case 'right':
+                        this.velocity.x = this.speed
+                        this.velocity.y = 0
+                        break
+                }
+            }
     }
     getCurrentDirection() {
         if (this.velocity.y < 0) return 'up'
@@ -220,11 +335,24 @@ class Enemy{
         if (this.velocity.x > 0) return 'right'
         return null
     }
+
+    // check if enemy is colliding with player
+    checkPlayerCollision(player) {
+        return Math.hypot(
+            this.position.x - player.position.x,
+            this.position.y - player.position.y
+        ) < this.radius + player.radius
+    }
+    //stop movement if it does
+    stop() {
+        this.velocity.x = 0;
+        this.velocity.y = 0;
+    }
 }
 
 //Pellet class
 class Pellet {
-    constructor({position, velocity}) {
+    constructor({position}) {
         this.position = position
         this.radius = 3
     }
@@ -235,46 +363,24 @@ class Pellet {
         c.fill()
         c.closePath()
     }
+
+    checkCollision(player, pellets, i, scoreEl) {
+        if (
+            Math.hypot(
+                //circle to circle collision detection for player vs pellet
+                this.position.x - player.position.x,
+                this.position.y - player.position.y
+            ) < this.radius + player.radius
+        ) {
+            // splice pellet and increment score on each collision
+            pellets.splice(i, 1)
+            score += 10
+            scoreEl.innerHTML = score
+        }
+    }
 }
 
-// Keys Object 
-const keys = {
-    ArrowUp: {
-        pressed: false
-    }, 
-    ArrowLeft: {
-        pressed: false
-    }, 
-    ArrowRight: {
-        pressed: false
-    }, 
-    ArrowDown: {
-        pressed: false
-    }, 
-}
-// last key to update when a new key is pressed
-let lastKey = '';
-//score property that updates 
-let score = 0
 
-// MAP Object 
-const map = [
-    ['-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-'],
-    ['-',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','-'],
-    ['-',' ','-',' ','-','-','-',' ','-',' ',' ','-',' ','-','-','-',' ','-',' ','-'],
-    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
-    ['-',' ','-','-',' ',' ',' ','-',' ',' ',' ',' ','-',' ',' ',' ','-','-',' ','-'],
-    ['-',' ','-','-',' ',' ',' ','-','-','-','-','-','-',' ',' ',' ','-','-',' ','-'],
-    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
-    ['-',' ','-',' ','-','-','-',' ','-',' ',' ','-',' ','-','-','-',' ','-',' ','-'],
-    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
-    ['-',' ','-','-',' ',' ',' ','-','-','-','-','-','-',' ',' ',' ','-','-',' ','-'],
-    ['-',' ','-','-',' ',' ',' ','-',' ',' ',' ',' ','-',' ',' ',' ','-','-',' ','-'],
-    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
-    ['-',' ','-',' ','-','-','-',' ','-',' ',' ','-',' ','-','-','-',' ','-',' ','-'],
-    ['-',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','-'],
-    ['-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-'],
-]
 // ARRAYS //
 // create boundaries as an array 
 const boundaries = []
@@ -285,7 +391,7 @@ const enemies = [
     new Enemy ({
         position: {
             x: Boundary.width * 6 + Boundary.width / 2,
-            y: Boundary.height + Boundary.height / 2,
+            y: Boundary.height * 8 + Boundary.height / 2,
         },
         // initialize movement
         velocity: {
@@ -347,108 +453,15 @@ function circleCollidesWithRectangle({circle, rectangle}) {
 //RENDERING/ANIMATIONS
 function animate() {
     requestAnimationFrame(animate)
-
     c.clearRect(0, 0, canvas.width, canvas.height)
 
-    if (keys.ArrowUp.pressed && lastKey === 'ArrowUp') {
-        //loop through all boundaries and test collision
-        for (let i = 0; i < boundaries.length; i ++) {
-            const boundary = boundaries[i]
-            if (
-                circleCollidesWithRectangle({
-                    //duplicate player object and reference velocity property
-                    circle: {...player,  velocity: {
-                        x: 0,
-                        y: -5
-                    }
-                },
-                    rectangle: boundary
-                })
-            ) {
-                player.velocity.y = 0
-                break
-            } else {
-                player.velocity.y = -5
-            }
-        }
-    } else if (keys.ArrowLeft.pressed && lastKey === 'ArrowLeft') {
-        for (let i = 0; i < boundaries.length; i ++) {
-            const boundary = boundaries[i]
-            if (
-                circleCollidesWithRectangle({
-                    //duplicate player object and reference velocity property
-                    circle: {...player,  velocity: {
-                        x: -5,
-                        y: 0
-                    }
-                },
-                    rectangle: boundary
-                })
-            ) {
-                player.velocity.x = 0
-                break
-            } else {
-                player.velocity.x = -5
-            }
-        }
-    } else if (keys.ArrowDown.pressed && lastKey === 'ArrowDown') {
-        for (let i = 0; i < boundaries.length; i ++) {
-            const boundary = boundaries[i]
-            if (
-                circleCollidesWithRectangle({
-                    //duplicate player object and reference velocity property
-                    circle: {...player,  velocity: {
-                        x: 0,
-                        y: 5
-                    }
-                },
-                    rectangle: boundary
-                })
-            ) {
-                player.velocity.y = 0
-                break
-            } else {
-                player.velocity.y = 5
-            }
-        }
-    } else if (keys.ArrowRight.pressed && lastKey === 'ArrowRight') {
-        for (let i = 0; i < boundaries.length; i ++) {
-            const boundary = boundaries[i]
-            if (
-                circleCollidesWithRectangle({
-                    //duplicate player object and reference velocity property
-                    circle: {...player,  velocity: {
-                        x: 5,
-                        y: 0
-                    }
-                },
-                    rectangle: boundary
-                })
-            ) {
-                player.velocity.x = 0
-                break
-            } else {
-                player.velocity.x = 5
-            }
-        }
-    }
+    player.handleMovement(keys, lastKey, boundaries)
 
-    //rendering pellets 
+    //Rendering pellets 
     for (let i = pellets.length - 1; 0 < i; i--) {
         const pellet = pellets[i]
         pellet.draw()
-        //circle to circle collision detection for player vs pellet
-        if (
-            Math.hypot(
-                pellet.position.x - player.position.x,
-                pellet.position.y - player.position.y
-            ) < pellet.radius + player.radius
-        ) {
-            // splice pellet and increment score on each collision
-            pellets.splice(i, 1)
-            score += 10
-            scoreEl.innerHTML =score
-        }
+        pellet.checkCollision(player, pellets, i, scoreEl)
     }
     //Rendering player
     boundaries.forEach((boundary) => {
@@ -469,28 +482,19 @@ function animate() {
     enemies.forEach(enemy => {
         enemy.update()
 
-        // Circle collision detection for player vs enemy
-        if (
-            Math.hypot(
-                enemy.position.x - player.position.x,
-                enemy.position.y - player.position.y
-            ) < enemy.radius + player.radius
+        // Check if player collides with enemy
+        if (enemy.checkPlayerCollision(player)
         ) {
             // Stop all movement
             player.velocity.x = 0;
             player.velocity.y = 0;
             
             // Stop all enemies
-            enemies.forEach(e => {
-                e.velocity.x = 0;
-                e.velocity.y = 0;
-            });
-
+            enemies.forEach(e => e.stop())
             // Cancel animation frame to stop the game
             cancelAnimationFrame(animationId);
             
         }
-
      })
 }
 animate()
@@ -500,38 +504,38 @@ animate()
 //Player Movement Key event Listeners
 addEventListener('keydown', ({key}) => {
     switch (key) {
-        case 'ArrowUp':
-            keys.ArrowUp.pressed = true
-            lastKey = 'ArrowUp'
+        case 'w':
+            keys.w.pressed = true
+            lastKey = 'w'
             break
-        case 'ArrowLeft':
-            keys.ArrowLeft.pressed = true
-            lastKey = 'ArrowLeft'
+        case 'a':
+            keys.a.pressed = true
+            lastKey = 'a'
             break
-        case 'ArrowDown':
-            keys.ArrowDown.pressed = true
-            lastKey = 'ArrowDown'
+        case 's':
+            keys.s.pressed = true
+            lastKey = 's'
             break
-        case 'ArrowRight':
-            keys.ArrowRight.pressed = true
-            lastKey = 'ArrowRight'
+        case 'd':
+            keys.d.pressed = true
+            lastKey = 'd'
             break
     }
 })
 
 addEventListener('keyup', ({key}) => {
     switch (key) {
-        case 'ArrowUp':
-            keys.ArrowUp.pressed = false
+        case 'w':
+            keys.w.pressed = false
             break
-        case 'ArrowLeft':
-            keys.ArrowLeft.pressed = false
+        case 'a':
+            keys.a.pressed = false
             break
-        case 'ArrowDown':
-            keys.ArrowDown.pressed = false
+        case 's':
+            keys.s.pressed = false
             break
-        case 'ArrowRight':
-            keys.ArrowRight.pressed = false
+        case 'd':
+            keys.d.pressed = false
             break
     }
 })
@@ -539,7 +543,7 @@ addEventListener('keyup', ({key}) => {
 
 $(document).ready(function() {
     //initial screen upon loading - currently game screen for building purposes
-    game.switchScreen('welcome-screen');
+    game.switchScreen('game-screen');
 
     //WELCOME SCREEN BUTTONS
     //go to instructions screen
@@ -551,7 +555,27 @@ $(document).ready(function() {
 
     //GAME SCREEN BUTTONS
     //toggle game state on click
-    $('#play-pause-btn').click(() => game.toggleRunning());
+
+    $('#play-pause-btn').on('click', () => {
+        // First get the duration value
+        const selectedDuration = parseInt($('#duration-select').val());
+        game.totalTime = parseInt($('#duration-select').val());
+        console.log('Selected duration:', selectedDuration); // Debug line
+
+        game.toggleRunning();
+        if (game.isRunning) {
+            game.startTimer();
+        } else {
+            game.pauseTimer();
+        }
+    });
+
+    //reset button
+    $('#reset-btn').on('click', () => {
+        game.isPaused = false; //clear pause state on reset
+        game.resetTimer();
+    });
+    
     //end game and navigate to game over screen on click
     $('#end-game-btn').click(() => game.switchScreen('game-over-screen'));
     //redirect back to welcome screen on click
