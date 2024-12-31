@@ -6,7 +6,6 @@ const game = {
     wasRunning: false,
     isPaused: false,
     currentScreen: 'welcome-screen',
-    $timeDisplay: $('#time-display'),
 
   //switch screen function
   switchScreen: function(screen) {
@@ -93,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
 //score property that updates upon pellet collision
 let score = 0
 
-
+//****************************************** CLASSES***********************************************/
 //Boundary class
 class Boundary {
     static width = 40
@@ -380,6 +379,13 @@ class Pellet {
     }
 }
 
+//collision detection for player vs boundary
+function circleCollidesWithRectangle({circle, rectangle}) {
+    return(circle.position.y - circle.radius + circle.velocity.y <= rectangle.position.y + rectangle.height //if top of circle collides with bottom of a rectangle
+        && circle.position.x + circle.radius + circle.velocity.x >= rectangle.position.x // if right of a circle collides with left of side of a rectangle
+        && circle.position.y + circle.radius + circle.velocity.y >= rectangle.position.y // if bottom of a circle collides with top rectangle
+        && circle.position.x - circle.radius + circle.velocity.x <= rectangle.position.x + rectangle.width)//if left of a circle is collides with right side of a boundary
+}
 
 // ARRAYS //
 // create boundaries as an array 
@@ -413,6 +419,7 @@ const player = new Player({
     }
 });
 
+//RENDERING/ANIMATIONS
 // Draw Map elements based on switch case 
 map.forEach((row, i) => {
     row.forEach((symbol, j) => {
@@ -441,16 +448,6 @@ map.forEach((row, i) => {
 })
 
 
-
-//collision detection for player vs boundary
-function circleCollidesWithRectangle({circle, rectangle}) {
-    return(circle.position.y - circle.radius + circle.velocity.y <= rectangle.position.y + rectangle.height //if top of circle collides with bottom of a rectangle
-        && circle.position.x + circle.radius + circle.velocity.x >= rectangle.position.x // if right of a circle collides with left of side of a rectangle
-        && circle.position.y + circle.radius + circle.velocity.y >= rectangle.position.y // if bottom of a circle collides with top rectangle
-        && circle.position.x - circle.radius + circle.velocity.x <= rectangle.position.x + rectangle.width)//if left of a circle is collides with right side of a boundary
-}
-
-//RENDERING/ANIMATIONS
 function animate() {
     requestAnimationFrame(animate)
     c.clearRect(0, 0, canvas.width, canvas.height)
