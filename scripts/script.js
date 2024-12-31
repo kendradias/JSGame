@@ -20,6 +20,18 @@ const game = {
     //if current screen is game over screen, stop game
     if (this.currentScreen === 'game-over-screen') {
         this.isRunning = false;
+
+        // Reset velocities just to be safe
+        if (player) {
+            player.velocity.x = 0;
+            player.velocity.y = 0;
+        }
+        if (enemies) {
+            enemies.forEach(enemy => {
+                enemy.velocity.x = 0;
+                enemy.velocity.y = 0;
+            });
+        }
     }
   },
 
@@ -90,8 +102,9 @@ class Enemy{
         this.velocity = velocity
         this.radius = 15
         this.color = color
-        //stores all collisions for each instatiation
-        this.prevCollisions = []
+        this.speed = 3
+        this.directionChangeInterval = 75
+        this.moveTimer = 0
     }
     draw() {
         c.beginPath()
@@ -102,8 +115,110 @@ class Enemy{
     }
     update() {
         this.draw()
-        this.position.x += this.velocity.x
-        this.position.y += this.velocity.y
+        this.moveTimer++
+
+        //Force direction change periodically to ecourage exploration
+        if (this.moveTimer >= this.directionChangeInterval) {
+            this.changeDirection(true) // indicates forced change
+            this.moveTimer = 0
+            return
+        }
+
+
+        // check for boundary collisions BEFORE moving
+        const potentialNextPosition = {
+            x: this.position.x + this.velocity.x,
+            y: this.position.y + this.velocity.y
+        }
+
+        //check if next position would cause a collision
+        let willCollide = false
+        boundaries.forEach(boundary => {
+            if (circleCollidesWithRectangle({
+                circle: {
+                    ...this, 
+                    position: potentialNextPosition
+                },
+                rectangle: boundary
+            })) {
+                willCollide = true
+            }
+        })
+
+        // Only move if no collision will occur
+        if (!willCollide) {
+            this.position.x += this.velocity.x
+            this.position.y += this.velocity.y
+        } else {
+            this.changeDirection()
+        }
+    }
+
+    changeDirection(forced = false) {
+        const directions = ['up', 'down', 'left', 'right']
+        const validDirections = directions.filter(direction => {
+            // Check each direction for potential collision
+            let testVelocity = { x: 0, y: 0 }
+            switch(direction) {
+                case 'up':
+                    testVelocity.y = -this.speed
+                    break
+                case 'down':
+                    testVelocity.y = this.speed
+                    break
+                case 'left':
+                    testVelocity.x = -this.speed
+                    break
+                case 'right':
+                    testVelocity.x = this.speed
+                    break
+            }
+
+                        // Test if moving in this direction would cause collision
+                        let wouldCollide = false
+                        boundaries.forEach(boundary => {
+                            if (circleCollidesWithRectangle({
+                                circle: {
+                                    ...this,
+                                    velocity: testVelocity
+                                },
+                                rectangle: boundary
+                            })) {
+                                wouldCollide = true
+                            }
+                        })
+                        return !wouldCollide
+                    })
+            
+                    if (validDirections.length > 0) {
+                        // Choose random valid direction
+                        const newDirection = validDirections[Math.floor(Math.random() * validDirections.length)]
+                        switch(newDirection) {
+                            case 'up':
+                                this.velocity.x = 0
+                                this.velocity.y = -this.speed
+                                break
+                            case 'down':
+                                this.velocity.x = 0
+                                this.velocity.y = this.speed
+                                break
+                            case 'left':
+                                this.velocity.x = -this.speed
+                                this.velocity.y = 0
+                                break
+                            case 'right':
+                                this.velocity.x = this.speed
+                                this.velocity.y = 0
+                                break
+                        }
+                    }
+    }
+    getCurrentDirection() {
+        if (this.velocity.y < 0) return 'up'
+        if (this.velocity.y > 0) return 'down'
+        if (this.velocity.x < 0) return 'left'
+        if (this.velocity.x > 0) return 'right'
+        return null
     }
 }
 
@@ -232,6 +347,7 @@ function circleCollidesWithRectangle({circle, rectangle}) {
 //RENDERING/ANIMATIONS
 function animate() {
     requestAnimationFrame(animate)
+
     c.clearRect(0, 0, canvas.width, canvas.height)
 
     if (keys.ArrowUp.pressed && lastKey === 'ArrowUp') {
@@ -352,124 +468,30 @@ function animate() {
     //Rendering enemies
     enemies.forEach(enemy => {
         enemy.update()
-        //create collisions array to push directions into based on collision detection
-        const collisions = []
-        //loop through directions 
-        boundaries.forEach((boundary) => {
-            if (
-                //if not already included in the array, push direction into the array
-                !collisions.includes('right') &&
-                circleCollidesWithRectangle({
-                    circle: {...enemy,  velocity: {
-                        x: 5,
-                        y: 0
-                    }
-                },
-                    rectangle: boundary
-                })
-            ) {
-                collisions.push('right')
-            }
+
+        // Circle collision detection for player vs enemy
+        if (
+            Math.hypot(
+                enemy.position.x - player.position.x,
+                enemy.position.y - player.position.y
+            ) < enemy.radius + player.radius
+        ) {
+            // Stop all movement
+            player.velocity.x = 0;
+            player.velocity.y = 0;
             
-            if (
-                !collisions.includes('left') &&
-                circleCollidesWithRectangle({
-                    circle: {...enemy,  velocity: {
-                        x: -5,
-                        y: 0
-                    }
-                },
-                    rectangle: boundary
-                })
-            ) {
-                collisions.push('left')
-            }
-            if (
-                !collisions.includes('up') &&
-                circleCollidesWithRectangle({
-                    circle: {...enemy,  velocity: {
-                        x: 0,
-                        y: -5
-                    }
-                },
-                    rectangle: boundary
-                })
-            ) {
-                collisions.push('up')
-            }
-            if (
-                !collisions.includes('down') &&
-                circleCollidesWithRectangle({
-                    //duplicate enemy object and reference velocity property
-                    circle: {...enemy,  velocity: {
-                        x: 0,
-                        y: 5
-                    }
-                },
-                    rectangle: boundary
-                })
-            ) {
-                collisions.push('down')
-            }
-        })
+            // Stop all enemies
+            enemies.forEach(e => {
+                e.velocity.x = 0;
+                e.velocity.y = 0;
+            });
 
-
-        //ensure we are only setting the value if we are actually colliding with something
-        if (collisions.length > enemy.prevCollisions.length) {
-            enemy.prevCollisions = collisions
+            // Cancel animation frame to stop the game
+            cancelAnimationFrame(animationId);
+            
         }
 
-        //converting to JSON object so that collisions and prevCollisions arrays can be compared against eachother
-        if (JSON.stringify(collisions) !== JSON.stringify(enemy.prevCollisions)) {
-            
-            //conditional statements to push direction for each potential pathways
-            if (enemy.velocity.x > 0) enemy.prevCollisions.push('right') 
-            else if (enemy.velocity.x < 0) enemy.prevCollisions.push('left')
-            else if (enemy.velocity.y < 0) enemy.prevCollisions.push('up')
-            else if (enemy.velocity.y > 0) enemy.prevCollisions.push('down')
-            
-            // console.log(collisions)
-            console.log(collisions)
-            console.log(enemy.prevCollisions)
-
-            const pathways = enemy.prevCollisions.filter((collision
-            ) => {
-                // if original collisions array does not include the collision we are looping over
-                return !collisions.includes(collision)
-            })
-            //viewing pathways
-            console.log({pathways})
-
-            if (pathways.length > 0) {
-                const direction = pathways[Math.floor(Math.random() * pathways.length)]
-                switch (direction) {
-                    case 'down':
-                        enemy.velocity.y = 5
-                        enemy.velocity.x = 0
-                        break;
-                    case 'up':
-                        enemy.velocity.y = -5
-                        enemy.velocity.x = 0
-                        break;
-                    case 'right':
-                        enemy.velocity.x = 5
-                        enemy.velocity.y = 0
-                        break;
-                    case 'left':
-                        enemy.velocity.x = -5
-                        enemy.velocity.y = 0
-                        break;
-                }
-            } else {
-                enemy.velocity.x = 0
-                enemy.velocity.y = 0
-            }
-            //reset enemy collisions at the end of the loop 
-            enemy.prevCollisions = [];
-        }
-    }
-
-    )
+     })
 }
 animate()
 
@@ -517,7 +539,7 @@ addEventListener('keyup', ({key}) => {
 
 $(document).ready(function() {
     //initial screen upon loading - currently game screen for building purposes
-    game.switchScreen('game-screen');
+    game.switchScreen('welcome-screen');
 
     //WELCOME SCREEN BUTTONS
     //go to instructions screen
