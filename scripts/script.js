@@ -31,22 +31,21 @@ const game = {
 }
 
 // canvas reference
-const canvas = document.querySelector('canvas');
-const c = canvas.getContext('2d');
+const canvas = document.querySelector('canvas')
+const c = canvas.getContext('2d')
 
 //score 
 document.addEventListener('DOMContentLoaded', () => {
-    const scoreEl = document.querySelector('#scoreEl');
-    console.log(scoreEl); // Should not be null if the element exists
+    const scoreEl = document.querySelector('#scoreEl')
 });
 
 //ensure canvas is width and height of gameboard
-const gameBoard = document.getElementById('game-board');
-canvas.width = gameBoard.offsetWidth;
-canvas.height = gameBoard.offsetHeight;
+const gameBoard = document.getElementById('game-board')
+canvas.width = gameBoard.offsetWidth
+canvas.height = gameBoard.offsetHeight
 
 
-//boundary class
+//Boundary class
 class Boundary {
     static width = 40
     static height = 40
@@ -63,7 +62,7 @@ class Boundary {
     }
 }
 
-//player class
+//Player class
 class Player {
     constructor({position, velocity}) {
         this.position = position
@@ -74,6 +73,30 @@ class Player {
         c.beginPath()
         c.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2)
         c.fillStyle = 'yellow'
+        c.fill()
+        c.closePath()
+    }
+    update() {
+        this.draw()
+        this.position.x += this.velocity.x
+        this.position.y += this.velocity.y
+    }
+}
+
+//Enemy class
+class Enemy{
+    constructor({position, velocity, color = 'red'}) {
+        this.position = position
+        this.velocity = velocity
+        this.radius = 15
+        this.color = color
+        //stores all collisions for each instatiation
+        this.prevCollisions = []
+    }
+    draw() {
+        c.beginPath()
+        c.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2)
+        c.fillStyle = this.color
         c.fill()
         c.closePath()
     }
@@ -137,11 +160,26 @@ const map = [
     ['-',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','-'],
     ['-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-'],
 ]
-
+// ARRAYS //
 // create boundaries as an array 
 const boundaries = []
 //create pellets as an array
 const pellets = []
+//instantiate enemies
+const enemies = [
+    new Enemy ({
+        position: {
+            x: Boundary.width * 6 + Boundary.width / 2,
+            y: Boundary.height + Boundary.height / 2,
+        },
+        // initialize movement
+        velocity: {
+            x: 3,
+            y: 0
+        }
+
+    })
+]
 //instantiate new player
 const player = new Player({
     position: {
@@ -154,6 +192,7 @@ const player = new Player({
     }
 });
 
+// Draw Map elements based on switch case 
 map.forEach((row, i) => {
     row.forEach((symbol, j) => {
         switch (symbol) {
@@ -180,6 +219,8 @@ map.forEach((row, i) => {
     })
 })
 
+
+
 //collision detection for player vs boundary
 function circleCollidesWithRectangle({circle, rectangle}) {
     return(circle.position.y - circle.radius + circle.velocity.y <= rectangle.position.y + rectangle.height //if top of circle collides with bottom of a rectangle
@@ -188,7 +229,7 @@ function circleCollidesWithRectangle({circle, rectangle}) {
         && circle.position.x - circle.radius + circle.velocity.x <= rectangle.position.x + rectangle.width)//if left of a circle is collides with right side of a boundary
 }
 
-//player movement animation
+//RENDERING/ANIMATIONS
 function animate() {
     requestAnimationFrame(animate)
     c.clearRect(0, 0, canvas.width, canvas.height)
@@ -276,7 +317,7 @@ function animate() {
         }
     }
 
-    // touch pellets here
+    //rendering pellets 
     for (let i = pellets.length - 1; 0 < i; i--) {
         const pellet = pellets[i]
         pellet.draw()
@@ -287,12 +328,13 @@ function animate() {
                 pellet.position.y - player.position.y
             ) < pellet.radius + player.radius
         ) {
+            // splice pellet and increment score on each collision
             pellets.splice(i, 1)
-            score += 1
+            score += 10
             scoreEl.innerHTML =score
         }
     }
-
+    //Rendering player
     boundaries.forEach((boundary) => {
         boundary.draw()
 
@@ -306,6 +348,128 @@ function animate() {
     }
     })
     player.update();
+
+    //Rendering enemies
+    enemies.forEach(enemy => {
+        enemy.update()
+        //create collisions array to push directions into based on collision detection
+        const collisions = []
+        //loop through directions 
+        boundaries.forEach((boundary) => {
+            if (
+                //if not already included in the array, push direction into the array
+                !collisions.includes('right') &&
+                circleCollidesWithRectangle({
+                    circle: {...enemy,  velocity: {
+                        x: 5,
+                        y: 0
+                    }
+                },
+                    rectangle: boundary
+                })
+            ) {
+                collisions.push('right')
+            }
+            
+            if (
+                !collisions.includes('left') &&
+                circleCollidesWithRectangle({
+                    circle: {...enemy,  velocity: {
+                        x: -5,
+                        y: 0
+                    }
+                },
+                    rectangle: boundary
+                })
+            ) {
+                collisions.push('left')
+            }
+            if (
+                !collisions.includes('up') &&
+                circleCollidesWithRectangle({
+                    circle: {...enemy,  velocity: {
+                        x: 0,
+                        y: -5
+                    }
+                },
+                    rectangle: boundary
+                })
+            ) {
+                collisions.push('up')
+            }
+            if (
+                !collisions.includes('down') &&
+                circleCollidesWithRectangle({
+                    //duplicate enemy object and reference velocity property
+                    circle: {...enemy,  velocity: {
+                        x: 0,
+                        y: 5
+                    }
+                },
+                    rectangle: boundary
+                })
+            ) {
+                collisions.push('down')
+            }
+        })
+
+
+        //ensure we are only setting the value if we are actually colliding with something
+        if (collisions.length > enemy.prevCollisions.length) {
+            enemy.prevCollisions = collisions
+        }
+
+        //converting to JSON object so that collisions and prevCollisions arrays can be compared against eachother
+        if (JSON.stringify(collisions) !== JSON.stringify(enemy.prevCollisions)) {
+            
+            //conditional statements to push direction for each potential pathways
+            if (enemy.velocity.x > 0) enemy.prevCollisions.push('right') 
+            else if (enemy.velocity.x < 0) enemy.prevCollisions.push('left')
+            else if (enemy.velocity.y < 0) enemy.prevCollisions.push('up')
+            else if (enemy.velocity.y > 0) enemy.prevCollisions.push('down')
+            
+            // console.log(collisions)
+            console.log(collisions)
+            console.log(enemy.prevCollisions)
+
+            const pathways = enemy.prevCollisions.filter((collision
+            ) => {
+                // if original collisions array does not include the collision we are looping over
+                return !collisions.includes(collision)
+            })
+            //viewing pathways
+            console.log({pathways})
+
+            if (pathways.length > 0) {
+                const direction = pathways[Math.floor(Math.random() * pathways.length)]
+                switch (direction) {
+                    case 'down':
+                        enemy.velocity.y = 5
+                        enemy.velocity.x = 0
+                        break;
+                    case 'up':
+                        enemy.velocity.y = -5
+                        enemy.velocity.x = 0
+                        break;
+                    case 'right':
+                        enemy.velocity.x = 5
+                        enemy.velocity.y = 0
+                        break;
+                    case 'left':
+                        enemy.velocity.x = -5
+                        enemy.velocity.y = 0
+                        break;
+                }
+            } else {
+                enemy.velocity.x = 0
+                enemy.velocity.y = 0
+            }
+            //reset enemy collisions at the end of the loop 
+            enemy.prevCollisions = [];
+        }
+    }
+
+    )
 }
 animate()
 
