@@ -1,11 +1,204 @@
 'use strict';
 
+// canvas reference
+const canvas = document.querySelector('canvas')
+const c = canvas.getContext('2d')
+//ensure canvas is width and height of gameboard
+const gameBoard = document.getElementById('game-board')
+canvas.width = gameBoard.offsetWidth
+canvas.height = gameBoard.offsetHeight
+
 // Game object 
 const game = {
     isRunning: false,
     wasRunning: false,
     isPaused: false,
+    playerName: '',
+    score: 0,
+    scoreEl: null,
+    isWin: false,
+    winningScore: 1630, // score acheived if player collects all the pellets on the map (needed for a win)
     currentScreen: 'welcome-screen',
+    difficulty: 'easy', //default difficulty
+
+    // adjust difficulty based on difficulty select 
+    difficultySettings :{
+        easy: {
+            enemySpeedMultiplier: 1.5,   
+            directionChangeInterval: 50,
+            enemyCount: 1
+        },
+        medium: {
+            enemySpeedMultiplier: 2,  
+            directionChangeInterval: 70,
+            enemyCount: 1  
+        },
+        hard: {
+            enemySpeedMultiplier: 2, 
+            directionChangeInterval: 70,
+            enemyCount: 2
+        }
+    },
+    
+    //initialize score 
+    initializeScore: function() {
+        this.scoreEl = document.querySelector('#scoreEl');
+        this.updateScore(0);
+    },
+
+    //add points, update score
+    updateScore: function(points) {
+        this.score += points;
+        if (this.scoreEl) {
+            this.scoreEl.innerHTML = this.score;
+        }
+        // Check win condition after updating score
+        this.checkWinCondition();
+    },
+
+    //reset score to 0
+    resetScore: function() {
+        this.score = 0;
+        if (this.scoreEl) {
+            this.scoreEl.innerHTML = '0';
+        }
+    },
+
+    // Set player name 
+    setPlayerName: function(name) {
+        this.playerName =  name
+        // update display
+        $('#playerNameDisplay').text(name)
+    },
+
+    // Add method to set difficulty
+    setDifficulty: function(level) {
+        if (this.difficultySettings[level]) {
+            this.difficulty = level;
+            $('#difficulty-select-instructions, #difficulty-select-gameover').val(level);
+            
+            // Clear existing enemies
+            enemies.length = 0;
+            
+            // Add enemies based on difficulty
+            const settings = this.difficultySettings[level];
+            for(let i = 0; i < settings.enemyCount; i++) {
+                enemies.push(
+                    new Enemy({
+                        position: {
+                            // Offset second enemy's starting position
+                            x: Boundary.width * (4 + i * 6) + Boundary.width / 2,
+                            y: Boundary.height * 8 + Boundary.height / 2,
+                        },
+                        velocity: {
+                            x: 2 * settings.enemySpeedMultiplier,
+                            y: 0
+                        },
+                        color: i === 0 ? 'red' : 'purple' // Different color for second enemy
+                    })
+                );
+            }
+            return true;
+        }
+        return false;
+    },
+
+    checkWinCondition: function() {
+        if (this.score >= this.winningScore) {
+            this.isWin = true;
+
+            // Stop all movement
+            player.stop();
+            enemies.forEach(e => e.stop());
+            
+            // Cancel animation frame
+            if (window.gameAnimationFrame) {
+                cancelAnimationFrame(window.gameAnimationFrame);
+                window.gameAnimationFrame = null;
+            }
+
+            this.isRunning = false;
+            
+            setTimeout(() => {
+                this.endGame();
+                this.switchScreen('game-over-screen');
+            }, 500);
+        }
+    },
+
+    endGame: function() {
+        if(!this.isRunning) {
+            // Update game over message based on win/lose condition
+            const gameOverMessage = this.isWin ? 
+            `You Won! Your score is ${this.score}` :
+            `You Lost! Your score is ${this.score}`
+
+            $('#game-over-message').text(gameOverMessage)
+        }
+    },
+
+    resetEntities: function() {
+        // Clear arrays
+        pellets.length = 0;
+
+        // Reset player to start position
+        player.position = {
+            x: Boundary.width + Boundary.width / 2,
+            y: Boundary.height + Boundary.height / 2
+        };
+        player.velocity = { x: 0, y: 0 };
+
+        // Reset enemy positions and velocities
+        const settings = this.difficultySettings[this.difficulty];
+        enemies.forEach((enemy, i) => {
+            enemy.position = {
+                x: Boundary.width * (4 + i * 6) + Boundary.width / 2,
+                y: Boundary.height * 8 + Boundary.height / 2
+            };
+            enemy.velocity = {
+                x: 2 * settings.enemySpeedMultiplier,
+                y: 0
+            };
+            enemy.moveTimer = 0;
+        });
+
+        // Regenerate map elements
+        map.forEach((row, i) => {
+            row.forEach((symbol, j) => {
+                if (symbol === ' ') {
+                    pellets.push(
+                        new Pellet({
+                            position: {
+                                x: j * Boundary.width + Boundary.width / 2,
+                                y: i * Boundary.height + Boundary.height / 2
+                            }
+                        })
+                    );
+                }
+            });
+        });
+    },
+
+    resetGame: function() {
+        this.isRunning = true;
+        this.isPaused = false;
+        // Reset score
+        this.resetScore();
+        // Reset all entities
+        this.resetEntities();
+
+        // Reset movement states
+        Object.keys(keys).forEach(key => keys[key].pressed = false);
+        lastKey = '';
+
+        this.isWin = false; // Reset win state
+        
+    },
+
+    toggleRunning: function () {
+        //update button text to display play/pause 
+        $('#play-pause-btn').text(this.isRunning ? 'Pause' : 'Play');
+    },
 
   //switch screen function
   switchScreen: function(screen) {
@@ -14,38 +207,28 @@ const game = {
     //hide all screens and show selected screen
     $('.screen').hide();
     $(`#${screen}`).show();
+
+    if (screen === 'game-screen') {
+        // get difficulty select from previous screen
+        this.resetGame();
+        const selectedDifficulty = $('#difficulty-select-instructions').val();
+        this.setDifficulty(selectedDifficulty);
+        this.startGame();
+    }
     //if current screen is game over screen, stop game
     if (this.currentScreen === 'game-over-screen') {
         this.isRunning = false;
-
-        // Reset velocities just to be safe
-        if (player) {
-            player.velocity.x = 0;
-            player.velocity.y = 0;
-        }
-        if (enemies) {
-            enemies.forEach(enemy => {
-                enemy.velocity.x = 0;
-                enemy.velocity.y = 0;
-            });
-        }
     }
-  },
-
-  toggleRunning: function () {
-    this.isRunning = !this.isRunning;
-    //update button text to display play/pause 
-    $('#play-pause-btn').text(this.isRunning ? 'Pause' : 'Play');
-    }
+  }
 }
 
-// canvas reference
-const canvas = document.querySelector('canvas')
-const c = canvas.getContext('2d')
-//ensure canvas is width and height of gameboard
-const gameBoard = document.getElementById('game-board')
-canvas.width = gameBoard.offsetWidth
-canvas.height = gameBoard.offsetHeight
+// // canvas reference
+// const canvas = document.querySelector('canvas')
+// const c = canvas.getContext('2d')
+// //ensure canvas is width and height of gameboard
+// const gameBoard = document.getElementById('game-board')
+// canvas.width = gameBoard.offsetWidth
+// canvas.height = gameBoard.offsetHeight
 
 
 // Keys Object 
@@ -85,13 +268,6 @@ const map = [
     ['-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-'],
 ]
 
-//score HTML element
-document.addEventListener('DOMContentLoaded', () => {
-    const scoreEl = document.querySelector('#scoreEl')
-});
-//score property that updates upon pellet collision
-let score = 0
-
 //****************************************** CLASSES***********************************************/
 //Boundary class
 class Boundary {
@@ -123,6 +299,10 @@ class Player {
         c.fillStyle = 'yellow'
         c.fill()
         c.closePath()
+    }
+    stop() {
+        this.velocity.x = 0
+        this.velocity.y = 0
     }
 
      //handling movement for player, checking for boundary collisions and reset last key to enable a change in direction to the newest key pressed
@@ -212,12 +392,19 @@ class Player {
 //Enemy class
 class Enemy{
     constructor({position, velocity, color = 'red'}) {
-        this.position = position
-        this.velocity = velocity
+        this.position = {
+            x: Math.round(position.x),
+            y: Math.round(position.y)
+        }
+        this.velocity = {
+            x: velocity.x,
+            y: velocity.y
+        }
         this.radius = 15
         this.color = color
-        this.speed = 3
-        this.directionChangeInterval = 75
+        this.baseSpeed = 2
+        this.speed = this.baseSpeed * game.difficultySettings[game.difficulty].enemySpeedMultiplier; //set speed based on diffiulty selected
+        this.directionChangeInterval = game.difficultySettings[game.difficulty].directionChangeInterval; //set direction change interval based on diffiulty selected
         this.moveTimer = 0
     }
     draw() {
@@ -230,14 +417,6 @@ class Enemy{
     update() {
         this.draw()
         this.moveTimer++
-
-        //Force direction change periodically to ecourage exploration
-        if (this.moveTimer >= this.directionChangeInterval) {
-            this.changeDirection(true) // indicates forced change
-            this.moveTimer = 0 //reset timer
-            return
-        }
-
 
         // check for boundary collisions BEFORE moving
         const potentialNextPosition = {
@@ -266,6 +445,14 @@ class Enemy{
         } else {
             this.changeDirection()
         }
+
+        //Force direction change periodically to ecourage exploration
+        if (this.moveTimer >= this.directionChangeInterval) {
+            this.changeDirection(true) // indicates forced change
+            this.moveTimer = 0 //reset timer
+            return
+        }
+        console.log("current speed : ", this.speed) //DEBUGGING ONLY 
     }
 
     changeDirection(forced = false) {
@@ -363,7 +550,7 @@ class Pellet {
         c.closePath()
     }
 
-    checkCollision(player, pellets, i, scoreEl) {
+    checkCollision(player, pellets, i) {
         if (
             Math.hypot(
                 //circle to circle collision detection for player vs pellet
@@ -373,8 +560,7 @@ class Pellet {
         ) {
             // splice pellet and increment score on each collision
             pellets.splice(i, 1)
-            score += 10
-            scoreEl.innerHTML = score
+            game.updateScore(10)
         }
     }
 }
@@ -401,7 +587,7 @@ const enemies = [
         },
         // initialize movement
         velocity: {
-            x: 3,
+            x: 2,
             y: 0
         }
 
@@ -447,18 +633,21 @@ map.forEach((row, i) => {
     })
 })
 
-
 function animate() {
+
     requestAnimationFrame(animate)
     c.clearRect(0, 0, canvas.width, canvas.height)
 
-    player.handleMovement(keys, lastKey, boundaries)
+    // Only allow player movement if game is still running
+    if (game.isRunning) {
+        player.handleMovement(keys, lastKey, boundaries);
+    }
 
     //Rendering pellets 
     for (let i = pellets.length - 1; 0 < i; i--) {
         const pellet = pellets[i]
         pellet.draw()
-        pellet.checkCollision(player, pellets, i, scoreEl)
+        pellet.checkCollision(player, pellets, i)
     }
     //Rendering player
     boundaries.forEach((boundary) => {
@@ -480,17 +669,15 @@ function animate() {
         enemy.update()
 
         // Check if player collides with enemy
-        if (enemy.checkPlayerCollision(player)
-        ) {
-            // Stop all movement
-            player.velocity.x = 0;
-            player.velocity.y = 0;
+        if (enemy.checkPlayerCollision(player)) {
+            game.isRunning = false;
+            player.stop();
+            enemies.forEach(e => e.stop());
             
-            // Stop all enemies
-            enemies.forEach(e => e.stop())
-            // Cancel animation frame to stop the game
-            cancelAnimationFrame(animationId);
-            
+            setTimeout(() => {
+                game.endGame();
+                game.switchScreen('game-over-screen');
+            }, 500);
         }
      })
 }
@@ -539,49 +726,77 @@ addEventListener('keyup', ({key}) => {
 
 
 $(document).ready(function() {
-    //initial screen upon loading - currently game screen for building purposes
-    game.switchScreen('game-screen');
+    //initial screen upon loading 
+    game.switchScreen('welcome-screen')
+    //initialize score 
+    game.initializeScore()
+
+    // Add error handling for name input
+    const $nameError = $('#name-error')
+    const $nameInput = $('#player-name-input')
+
+    // Hide error when user starts typing
+    $nameInput.on('input', function() {
+        $nameError.hide()
+    })
 
     //WELCOME SCREEN BUTTONS
-    //go to instructions screen
-    $('#instructions-btn').click(() => game.switchScreen('instructions-screen'));
+    // save player name and go to instructions screen
+    $('#instructions-btn').click(function(e) {
+        e.preventDefault()
+        const playerName = $nameInput.val().trim()
+        
+        if (!playerName) {
+            // Show error message
+            $nameError.show()
+            return
+        }
+        
+        // Store the player name
+        game.setPlayerName(playerName);
+        // Continue to instructions screen
+        game.switchScreen('instructions-screen')
+    });
 
     //INSTRUCTIONS SCREEN BUTTONS
-    //start game and navigate to game screen on click 
-    $('#play-game-btn').click(() => game.switchScreen('game-screen'));
+    // Keep difficulty selects in sync
+    $('#play-game-btn').click(function() {
+        game.isRunning = true
+        // Get difficulty value right when button is clicked
+        const selectedDifficulty = $('#difficulty-select-instructions').val()
+        game.setDifficulty(selectedDifficulty)
+        game.switchScreen('game-screen')
+    });
 
     //GAME SCREEN BUTTONS
     //toggle game state on click
-
     $('#play-pause-btn').on('click', () => {
-        // First get the duration value
-        const selectedDuration = parseInt($('#duration-select').val());
-        game.totalTime = parseInt($('#duration-select').val());
-        console.log('Selected duration:', selectedDuration); // Debug line
+        game.toggleRunning()
 
-        game.toggleRunning();
-        if (game.isRunning) {
-            game.startTimer();
-        } else {
-            game.pauseTimer();
-        }
     });
 
     //reset button
     $('#reset-btn').on('click', () => {
-        game.isPaused = false; //clear pause state on reset
-        game.resetTimer();
+        game.resetGame()
     });
     
     //end game and navigate to game over screen on click
-    $('#end-game-btn').click(() => game.switchScreen('game-over-screen'));
-    //redirect back to welcome screen on click
-    $('#quit-btn').click(() => game.switchScreen('welcome-screen'));
+    $('#end-game-btn').click(() => game.switchScreen('game-over-screen'))
 
     //GAME OVER BUTTONS
     // switch to game screen on click
-    $('#play-again-btn').click(() => game.switchScreen('game-screen'));
+    $('#play-again-btn').click(function() {
+        const selectedDifficulty = $('#difficulty-select-gameover').val()
+        // Set difficulty from instructions screen before starting game
+        game.resetGame()
+        game.setDifficulty(selectedDifficulty)
+        game.switchScreen('game-screen')
+    });
     //redirect back to splash screen on click
-    $('#quit-btn').click(() => game.switchScreen('welcome-screen'));
+    $('#quit-btn').click(function() {
+        game.switchScreen('welcome-screen');
+        game.resetScore()
+        game.resetEntities()
+    })
     
 });
