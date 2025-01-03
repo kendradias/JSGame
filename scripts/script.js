@@ -648,8 +648,8 @@ map.forEach((row, i) => {
 })
 
 function animate() {
-
-    requestAnimationFrame(animate)
+    // initiate animation frame 
+    const animationId = requestAnimationFrame(animate)
     c.clearRect(0, 0, canvas.width, canvas.height)
 
     // Only allow player movement if game is still running
@@ -687,6 +687,7 @@ function animate() {
             game.isRunning = false;
             player.stop();
             enemies.forEach(e => e.stop());
+            cancelAnimationFrame(animationId);
             
             setTimeout(() => {
                 game.endGame();
@@ -695,7 +696,6 @@ function animate() {
         }
      })
 }
-
 
 //Event Listeners
 //Player Movement Key event Listeners
