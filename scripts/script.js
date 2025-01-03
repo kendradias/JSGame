@@ -1,4 +1,5 @@
-'use strict';
+'use strict'
+
 
 // canvas reference
 const canvas = document.querySelector('canvas')
@@ -126,15 +127,28 @@ const game = {
         }
     },
 
-    endGame: function() {
-        if(!this.isRunning) {
-            // Update game over message based on win/lose condition
-            const gameOverMessage = this.isWin ? 
-            `You Won! Your score is ${this.score}` :
-            `You Lost! Your score is ${this.score}`
+    startGame: function() {
+        this.isRunning = true
+        //start animations
+        animate()
+    },
 
-            $('#game-over-message').text(gameOverMessage)
-        }
+    stopGame: function() {
+        this.isRunning = false
+        this.isPaused = false
+
+        //stop animations
+        cancelAnimationFrame(animate)
+    },
+
+    endGame: function() {
+        this.stopGame()
+        // Update game over message based on win/lose condition
+        const gameOverMessage = this.isWin ? 
+        `You Won! Your score is ${this.score}` :
+        `You Lost! Your score is ${this.score}`
+
+        $('#game-over-message').text(gameOverMessage)
     },
 
     resetEntities: function() {
@@ -681,7 +695,6 @@ function animate() {
         }
      })
 }
-animate()
 
 
 //Event Listeners
@@ -795,8 +808,7 @@ $(document).ready(function() {
     //redirect back to splash screen on click
     $('#quit-btn').click(function() {
         game.switchScreen('welcome-screen');
-        game.resetScore()
-        game.resetEntities()
+
     })
     
 });
