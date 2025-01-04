@@ -1,26 +1,25 @@
 'use strict'
 
-
 // canvas reference
 const canvas = document.querySelector('canvas')
 const c = canvas.getContext('2d')
 //ensure canvas is width and height of gameboard
 const gameBoard = document.getElementById('game-board')
-canvas.width = gameBoard.offsetWidth
-canvas.height = gameBoard.offsetHeight
+canvas.width = gameBoard.offsetWidth - 30 //removed unecessary padding
+canvas.height = gameBoard.offsetHeight 
 
 // Game object 
 const game = {
     isRunning: false,
-    wasRunning: false,
     isPaused: false,
+    forceQuit: false,
     playerName: '',
     score: 0,
     scoreEl: null,
     isWin: false,
-    winningScore: 1630, // score acheived if player collects all the pellets on the map (needed for a win)
-    currentScreen: 'welcome-screen',
-    difficulty: 'easy', //default difficulty
+    winningScore: 1640, // score acheived if player collects all the pellets on the map (needed for a win)
+    currentScreen: 'welcome-screen', //default screen
+    difficulty: 'easy', // default difficulty
 
     // adjust difficulty based on difficulty select 
     difficultySettings :{
@@ -57,14 +56,6 @@ const game = {
         this.checkWinCondition();
     },
 
-    //reset score to 0
-    resetScore: function() {
-        this.score = 0;
-        if (this.scoreEl) {
-            this.scoreEl.innerHTML = '0';
-        }
-    },
-
     // Set player name 
     setPlayerName: function(name) {
         this.playerName =  name
@@ -75,6 +66,7 @@ const game = {
     // Add method to set difficulty
     setDifficulty: function(level) {
         if (this.difficultySettings[level]) {
+
             this.difficulty = level;
             $('#difficulty-select-instructions, #difficulty-select-gameover').val(level);
             
@@ -104,51 +96,65 @@ const game = {
         return false;
     },
 
-    checkWinCondition: function() {
-        if (this.score >= this.winningScore) {
-            this.isWin = true;
-
-            // Stop all movement
-            player.stop();
-            enemies.forEach(e => e.stop());
-            
-            // Cancel animation frame
-            if (window.gameAnimationFrame) {
-                cancelAnimationFrame(window.gameAnimationFrame);
-                window.gameAnimationFrame = null;
-            }
-
-            this.isRunning = false;
-            
-            setTimeout(() => {
-                this.endGame();
-                this.switchScreen('game-over-screen');
-            }, 500);
-        }
-    },
-
     startGame: function() {
         this.isRunning = true
-        //start animations
+        // Start animations
         animate()
     },
 
-    stopGame: function() {
-        this.isRunning = false
-        this.isPaused = false
+    checkWinCondition: function() {
+        if (this.score >= this.winningScore) {
+            this.isWin = true
 
-        //stop animations
-        cancelAnimationFrame(animate)
+            this.endGame()
+        }
     },
 
     endGame: function() {
-        this.stopGame()
-        // Update game over message based on win/lose condition
-        const gameOverMessage = this.isWin ? 
-        `You Won! Your score is ${this.score}` :
-        `You Lost! Your score is ${this.score}`
+        const $message = $('#game-over-message')
+        // First remove any existing classes
+        $message.removeClass('win-message lose-message')
+        
+        if (this.isWin) {
+            $message
+                .text(`You Won! Your Score is ${this.score}`)
+                .addClass('win-message')
+        } else {
+            $message
+                .text(`You Lost! Your Score is ${this.score}`)
+                .addClass('lose-message')
+        }
+    
+        setTimeout(() => {
+            this.switchScreen('game-over-screen')
+        }, 500)
+    },
+    resetGame: function() {
+        // Reset game states 
+        this.isRunning = true
+        this.isPaused = false
+        this.forceQuit = false
+        // Reset win state
+        this.isWin = false 
+        // Reset pause/play btn
+        $('#play-pause-btn').text('PAUSE')
+        // Reset score
+        this.score = 0;
+        if (this.scoreEl) {
+            this.scoreEl.innerHTML = '0';
+        }
+        // Reset all entities
+        this.resetEntities()
 
-        $('#game-over-message').text(gameOverMessage)
+        // Reset movement states
+        Object.keys(keys).forEach(key => keys[key].pressed = false)
+        lastKey = ''
+    },
+
+    toggleRunning: function () {
+        //update button text to display play/pause 
+        this.isPaused = !this.isPaused
+        $('#play-pause-btn').text(this.isPaused ? 'PLAY' : 'PAUSE')
     },
 
     resetEntities: function() {
@@ -193,94 +199,26 @@ const game = {
         });
     },
 
-    resetGame: function() {
-        this.isRunning = true;
-        this.isPaused = false;
-        // Reset score
-        this.resetScore();
-        // Reset all entities
-        this.resetEntities();
+    //switch screen function
+    switchScreen: function(screen) {
+        //update current screen property
+        this.currentScreen = screen;
+        //hide all screens and show selected screen
+        $('.screen').hide()
+        $(`#${screen}`).show()
 
-        // Reset movement states
-        Object.keys(keys).forEach(key => keys[key].pressed = false);
-        lastKey = '';
-
-        this.isWin = false; // Reset win state
-        
-    },
-
-    toggleRunning: function () {
-        //update button text to display play/pause 
-        $('#play-pause-btn').text(this.isRunning ? 'Pause' : 'Play');
-    },
-
-  //switch screen function
-  switchScreen: function(screen) {
-    //update current screen property
-    this.currentScreen = screen;
-    //hide all screens and show selected screen
-    $('.screen').hide();
-    $(`#${screen}`).show();
-
-    if (screen === 'game-screen') {
-        // get difficulty select from previous screen
-        this.resetGame();
-        const selectedDifficulty = $('#difficulty-select-instructions').val();
-        this.setDifficulty(selectedDifficulty);
-        this.startGame();
-    }
-    //if current screen is game over screen, stop game
-    if (this.currentScreen === 'game-over-screen') {
-        this.isRunning = false;
-    }
+        if (screen === 'game-screen') {
+            // get difficulty select from previous screen
+            this.resetGame()
+            const selectedDifficulty = $('#difficulty-select-instructions').val()
+            this.setDifficulty(selectedDifficulty)
+            this.startGame()
+        }
+        //if current screen is game over screen, stop game
+        if (this.currentScreen === 'game-over-screen') {
+        }
   }
 }
-
-// // canvas reference
-// const canvas = document.querySelector('canvas')
-// const c = canvas.getContext('2d')
-// //ensure canvas is width and height of gameboard
-// const gameBoard = document.getElementById('game-board')
-// canvas.width = gameBoard.offsetWidth
-// canvas.height = gameBoard.offsetHeight
-
-
-// Keys Object 
-const keys = {
-    w: {
-        pressed: false
-    }, 
-    a: {
-        pressed: false
-    }, 
-    d: {
-        pressed: false
-    }, 
-    s: {
-        pressed: false
-    }, 
-}
-// last key to update when a new key is pressed
-let lastKey = '';
-
-// MAP Object 
-const map = [
-    ['-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-'],
-    ['-',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','-'],
-    ['-',' ','-',' ','-','-','-',' ','-',' ',' ','-',' ','-','-','-',' ','-',' ','-'],
-    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
-    ['-',' ','-','-',' ',' ',' ','-',' ',' ',' ',' ','-',' ',' ',' ','-','-',' ','-'],
-    ['-',' ','-','-',' ',' ',' ','-','-','-','-','-','-',' ',' ',' ','-','-',' ','-'],
-    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
-    ['-',' ','-',' ','-','-','-',' ','-',' ',' ','-',' ','-','-','-',' ','-',' ','-'],
-    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
-    ['-',' ','-','-',' ',' ',' ','-','-','-','-','-','-',' ',' ',' ','-','-',' ','-'],
-    ['-',' ','-','-',' ',' ',' ','-',' ',' ',' ',' ','-',' ',' ',' ','-','-',' ','-'],
-    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
-    ['-',' ','-',' ','-','-','-',' ','-',' ',' ','-',' ','-','-','-',' ','-',' ','-'],
-    ['-',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','-'],
-    ['-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-'],
-]
 
 //****************************************** CLASSES***********************************************/
 //Boundary class
@@ -288,7 +226,7 @@ class Boundary {
     static width = 40
     static height = 40
     constructor({position}) {
-        this.position = position;
+        this.position = position
         this.width = 40
         this.height = 40
     }
@@ -466,6 +404,7 @@ class Enemy{
             this.moveTimer = 0 //reset timer
             return
         }
+
         console.log("current speed : ", this.speed) //DEBUGGING ONLY 
     }
 
@@ -543,11 +482,6 @@ class Enemy{
             this.position.y - player.position.y
         ) < this.radius + player.radius
     }
-    //stop movement if it does
-    stop() {
-        this.velocity.x = 0;
-        this.velocity.y = 0;
-    }
 }
 
 //Pellet class
@@ -579,15 +513,51 @@ class Pellet {
     }
 }
 
-//collision detection for player vs boundary
+// GLOBALS //
+// Keys Object 
+const keys = {
+    w: {
+        pressed: false
+    }, 
+    a: {
+        pressed: false
+    }, 
+    d: {
+        pressed: false
+    }, 
+    s: {
+        pressed: false
+    }, 
+}
+// last key to update when a new key is pressed
+let lastKey = ''
+
+// MAP Object 
+const map = [
+    ['-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-'],
+    ['-',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','-'],
+    ['-',' ','-',' ','-','-','-',' ','-',' ',' ','-',' ','-','-','-',' ','-',' ','-'],
+    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
+    ['-',' ','-','-',' ',' ',' ','-',' ',' ',' ',' ','-',' ',' ',' ','-','-',' ','-'],
+    ['-',' ','-','-',' ',' ',' ','-','-','-','-','-','-',' ',' ',' ','-','-',' ','-'],
+    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
+    ['-',' ','-',' ','-','-','-',' ','-',' ',' ','-',' ','-','-','-',' ','-',' ','-'],
+    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
+    ['-',' ','-','-',' ',' ',' ','-','-','-','-','-','-',' ',' ',' ','-','-',' ','-'],
+    ['-',' ','-','-',' ',' ',' ','-',' ',' ',' ',' ','-',' ',' ',' ','-','-',' ','-'],
+    ['-',' ',' ',' ',' ','-',' ',' ',' ',' ',' ',' ',' ',' ','-',' ',' ',' ',' ','-'],
+    ['-',' ','-',' ','-','-','-',' ','-',' ',' ','-',' ','-','-','-',' ','-',' ','-'],
+    ['-',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','-'],
+    ['-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-'],
+]
+
+//collision detection for player/enemy vs boundary
 function circleCollidesWithRectangle({circle, rectangle}) {
     return(circle.position.y - circle.radius + circle.velocity.y <= rectangle.position.y + rectangle.height //if top of circle collides with bottom of a rectangle
         && circle.position.x + circle.radius + circle.velocity.x >= rectangle.position.x // if right of a circle collides with left of side of a rectangle
         && circle.position.y + circle.radius + circle.velocity.y >= rectangle.position.y // if bottom of a circle collides with top rectangle
         && circle.position.x - circle.radius + circle.velocity.x <= rectangle.position.x + rectangle.width)//if left of a circle is collides with right side of a boundary
 }
-
-// ARRAYS //
 // create boundaries as an array 
 const boundaries = []
 //create pellets as an array
@@ -617,7 +587,7 @@ const player = new Player({
         x:0,
         y:0
     }
-});
+})
 
 //RENDERING/ANIMATIONS
 // Draw Map elements based on switch case 
@@ -635,6 +605,8 @@ map.forEach((row, i) => {
                 )
                 break;
             case ' ':
+                // Skip pellet creation at player start position
+                if (!(i === 1 && j === 1)) {  // These are the coordinates where the player starts
                 pellets.push(
                     new Pellet({
                         position: {
@@ -643,6 +615,7 @@ map.forEach((row, i) => {
                         }
                     })
                 )
+            }
         }
     })
 })
@@ -650,6 +623,23 @@ map.forEach((row, i) => {
 function animate() {
     // initiate animation frame 
     const animationId = requestAnimationFrame(animate)
+
+    // if game is paused, just redraw current state 
+    if (game.isPaused) {
+        // Draw current state
+        boundaries.forEach(boundary => boundary.draw())
+        pellets.forEach(pellet => pellet.draw())
+        player.draw()
+        enemies.forEach(enemy => enemy.draw())
+        return
+    }
+
+    // Check for forcequit condition
+    if (game.forceQuit) {
+        cancelAnimationFrame(animationId)
+        return
+    }
+    
     c.clearRect(0, 0, canvas.width, canvas.height)
 
     // Only allow player movement if game is still running
@@ -657,13 +647,17 @@ function animate() {
         player.handleMovement(keys, lastKey, boundaries);
     }
 
-    //Rendering pellets 
-    for (let i = pellets.length - 1; 0 < i; i--) {
+    //Rendering pellets, checking collision
+    for (let i = pellets.length - 1; i >= 0; i--) {
         const pellet = pellets[i]
         pellet.draw()
-        pellet.checkCollision(player, pellets, i)
+        // Only check collisions if player has moved from starting position
+        if (player.velocity.x !== 0 || player.velocity.y !== 0) {
+            pellet.checkCollision(player, pellets, i)
+        }
     }
-    //Rendering player
+    
+    //Rendering player, checking collision
     boundaries.forEach((boundary) => {
         boundary.draw()
 
@@ -678,23 +672,17 @@ function animate() {
     })
     player.update();
 
-    //Rendering enemies
+
+    // Rendering enemies, checking collision
     enemies.forEach(enemy => {
         enemy.update()
 
-        // Check if player collides with enemy
-        if (enemy.checkPlayerCollision(player)) {
-            game.isRunning = false;
-            player.stop();
-            enemies.forEach(e => e.stop());
+        // Check if player collides with enemy or wins the game, and stop animations if it does 
+        if (enemy.checkPlayerCollision(player) || game.isWin) {
             cancelAnimationFrame(animationId);
-            
-            setTimeout(() => {
-                game.endGame();
-                game.switchScreen('game-over-screen');
-            }, 500);
+            game.endGame();
         }
-     })
+    })
 }
 
 //Event Listeners
@@ -760,42 +748,46 @@ $(document).ready(function() {
         const playerName = $nameInput.val().trim()
         
         if (!playerName) {
-            // Show error message
+            // Show error message if no name is entered 
             $nameError.show()
             return
         }
         
         // Store the player name
-        game.setPlayerName(playerName);
+        game.setPlayerName(playerName)
         // Continue to instructions screen
         game.switchScreen('instructions-screen')
-    });
+    })
 
     //INSTRUCTIONS SCREEN BUTTONS
     // Keep difficulty selects in sync
     $('#play-game-btn').click(function() {
-        game.isRunning = true
         // Get difficulty value right when button is clicked
         const selectedDifficulty = $('#difficulty-select-instructions').val()
         game.setDifficulty(selectedDifficulty)
         game.switchScreen('game-screen')
-    });
+    })
 
     //GAME SCREEN BUTTONS
     //toggle game state on click
     $('#play-pause-btn').on('click', () => {
         game.toggleRunning()
-
-    });
+    })
 
     //reset button
     $('#reset-btn').on('click', () => {
         game.resetGame()
-    });
+    })
     
     //end game and navigate to game over screen on click
-    $('#end-game-btn').click(() => game.switchScreen('game-over-screen'))
-
+    $('#end-game-btn').click(function() {
+        game.forceQuit = true
+        game.isRunning = false
+        // unqiue message for this case 
+        const gameOverMessage = "Game Over!"
+        $('#game-over-message').text(gameOverMessage)
+        game.switchScreen('game-over-screen')
+    })
     //GAME OVER BUTTONS
     // switch to game screen on click
     $('#play-again-btn').click(function() {
@@ -804,11 +796,10 @@ $(document).ready(function() {
         game.resetGame()
         game.setDifficulty(selectedDifficulty)
         game.switchScreen('game-screen')
-    });
+    })
     //redirect back to splash screen on click
     $('#quit-btn').click(function() {
-        game.switchScreen('welcome-screen');
-
+        game.switchScreen('welcome-screen')
     })
     
-});
+})

@@ -41,7 +41,7 @@ body {
     font-style: normal;
 }
 
-/* Game Board Styles */  
+/* Generic Game Board Styles */  
 
 header h1 {
     font-family: "Micro 5 Charted";
@@ -66,9 +66,8 @@ header h1 {
     display: flex;
     width: 100%;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    gap: 1rem;
+    gap: 1rem; 
 }
 
 .screen-content h1 {
@@ -76,9 +75,21 @@ header h1 {
     font-size: 50px
 }
 
+/* Welcome Screen */
+#instructions-btn {
+    width: 90px;
+    padding: 2px;
+    background-color: blue;
+    border-radius: 5px;
+    border: 1px solid white;
+}
+#instructions-btn:hover {
+    color: white;
+}
+
 /* Game Screen */
 
-.game-screen-buttons button {
+.game-screen-buttons{
     border: none;
     background-color: transparent;
     color: white;
@@ -87,8 +98,105 @@ header h1 {
     padding: 1rem;
 }
 
-.game-screen-buttons, button:hover {
+.game-screen-buttons:hover {
     color: red;
 }
 
+.game-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 1rem;
+}
+
+/* Create two groups that stay together */
+.game-info .player-group,
+.game-info .score-group {
+    display: flex;
+    gap: 0.5rem; /* Adds small space between label and value */
+}
 /* Instructions Screen */
+
+.instructions-content {
+    color: white;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.instructions-content h1 {
+    font-family: "Micro 5";
+    font-size: 40px;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.instructions-content h3 {
+    color: blue;
+    font-family: "Micro 5";
+    font-size: 30px;
+    margin-bottom: 1rem;
+}
+
+.instructions-content div {
+    margin-bottom: 2rem;
+}
+
+.instructions-content p {
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+
+.instructions-content ul {
+    list-style-type: none;
+}
+
+.instructions-content li {
+    margin: 0.5rem 0;
+    line-height: 1.4;
+}
+
+.controls ul li {
+    font-family: "VT323";
+    font-size: 25px;
+}
+
+/*buttons*/
+#play-game-btn {
+    width: 100%;
+    background-color: blue;
+    border-radius: 5px;
+}
+
+#play-game-btn:hover {
+    color: white;
+}
+
+/* Game Over Screen */
+.game-over-screen-btns {
+    width: 150px;
+    border-radius: 5px;
+    border: 1px solid white;
+}
+
+/*buttons*/
+.game-over-screen-btns:hover {
+    color: white;
+}
+
+#play-again-btn {
+    background-color: blue;
+}
+#quit-btn {
+    background-color: red;
+}
+
+/*gameover message*/
+#game-over-message.win-message {
+    color: green;
+}
+
+#game-over-message.lose-message {
+    color: red;
+}

@@ -18,56 +18,88 @@
             <h1>Hungry Hero</h1>
         </header>
         <div id="game-board">
+            <!-- WELCOME SCREEN -->
             <div id="welcome-screen" class="screen">
                 <div class="screen-content">
                     <h1>Welcome!</h1>
                     <div id="player-form-container">
                         <p>Please Enter a Username: </p>
                         <input type="text" id="player-name-input" placeholder="Enter Name">
-                        <button id="instructions-btn" class="btn btn-primary">Enter</button>
-                        <div id="name-error" class="error-message" style="display: none; color: red; margin: 10px 0;">
-                            Please enter a player name to continue
-                        </div>
+                        <button id="instructions-btn">Enter</button>
+                    </div>
+                    <div id="name-error" class="error-message" style="display: none; color: red; margin: 10px 0;">
+                        Please enter a player name to continue
                     </div>
                 </div>
             </div>
-    
+            <!-- INSTRUCTIONS SCREEN -->
             <div id="instructions-screen" class="screen">
                 <div class="screen-content">
-                    <h1>Instructions</h1>
-                    <div class="select-form">
-                        <label for="difficulty-select">Difficulty Level:</label>
-                        <select id="difficulty-select-instructions" class="form-control">
-                            <option value="easy">Easy</option>
-                            <option value="medium">Medium</option>
-                            <option value="hard">Hard</option>
-                        </select>
+                    <div class="instructions-content">
+                        <h1>How to Play</h1>
+                        <div class="objective">
+                            <h3>Objective</h3>
+                            <p>Collect all white pellets on the board while avoiding the enemies. Once you've collected all pellets, you win!</p>
+                        </div>
+                    
+                        <div class="controls">
+                            <h3>Controls</h3>
+                            <p>Use these keys to navigate through the maze:</p>
+                            <ul>
+                                <li>'W' - Move Up</li>
+                                <li>'A' - Move Left</li>
+                                <li>'S' - Move Down</li>
+                                <li>'D' - Move Right</li>
+                            </ul>
+                        </div>
+                    
+                        <div class="additional-info">
+                            <h3>Game Features</h3>
+                            <ul>
+                                <li>Enemies will chase you through the maze</li>
+                                <li>Choose your difficulty level to adjust enemy speed and count</li>
+                                <li>Use the Play/Pause button to pause the game at any time</li>
+                                <li>Reset button will restart your current game</li>
+                                <li>End Game button will end your current game</li>
+                            </ul>
+                        </div>
+                        <div class="select-form">
+                            <label for="difficulty-select-instructions">Select a cDifficulty Level:</label>
+                            <select id="difficulty-select-instructions" class="form-control">
+                                <option value="easy">Easy</option>
+                                <option value="medium">Medium</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </div>
+                        <button id="play-game-btn">Start Game</button>
                     </div>
-                    <button id="play-game-btn" class="btn btn-primary">Start Game</button>
-                </div>
+                    </div>
+                    
             </div>
-    
+            <!-- GAME SCREEN -->
             <div id="game-screen" class="screen">
                 <div class="screen-content">
-                    <div class="game-screen-buttons">
-                        <button id="play-pause-btn">Pause</button>
-                        <button id="reset-btn">Reset</button>
-                        <button id="end-game-btn">End Game</button>
+                    <div>
+                        <button id="play-pause-btn" class="game-screen-buttons">PAUSE</button>
+                        <button id="reset-btn" class="game-screen-buttons">RESET</button>
+                        <button id="end-game-btn" class="game-screen-buttons">END GAME</button>
                     </div>
-                    <div class="game-info">
+                    <div class="player-group">
                         <span>Player: </span><span id="playerNameDisplay"></span>
+                    </div>
+                    <div class="score-group">
                         <span>Score: </span><span id="scoreEl">0</span>
                     </div>
-
-                    <!--Canvas Reference-->
-                    <canvas></canvas>
+                    <div class="canvas-wrapper">
+                        <!--Canvas Reference-->
+                        <canvas></canvas>
+                    </div>
                 </div>
             </div>
-    
+            <!-- GAME OVER SCREEN -->
             <div id="game-over-screen" class="screen">
                 <div class="screen-content">
-                    <h1>Game Over!</h1>
-                    <p id="game-over-message"></p>
+                    <h1 id="game-over-message"></h1>
                     <p>Do you want to play again?</p>
                     <div class="select-form">
                         <label for="difficulty-select-gameover">Difficulty Level:</label>
@@ -77,8 +109,8 @@
                             <option value="hard">Hard</option>
                         </select>
                     </div>
-                    <button id="play-again-btn" class="btn btn-primary">Play Again</button>
-                    <button id="quit-btn" class="btn btn-danger">Quit</button>
+                    <button id="play-again-btn" class="game-over-screen-btns">Play Again</button>
+                    <button id="quit-btn" class="game-over-screen-btns">Quit</button>
                 </div>
             </div>
         </div>
