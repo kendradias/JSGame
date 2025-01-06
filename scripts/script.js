@@ -1,6 +1,6 @@
 'use strict'
 
-// canvas reference
+// Configuration and Constants
 const canvas = document.querySelector('canvas')
 const c = canvas.getContext('2d')
 //ensure canvas is width and height of gameboard
@@ -404,8 +404,6 @@ class Enemy{
             this.moveTimer = 0 //reset timer
             return
         }
-
-        console.log("current speed : ", this.speed) //DEBUGGING ONLY 
     }
 
     changeDirection(forced = false) {
