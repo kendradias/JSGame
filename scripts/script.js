@@ -734,6 +734,20 @@ $(document).ready(function() {
     const $nameError = $('#name-error')
     const $nameInput = $('#player-name-input')
 
+
+    //allow user to press enter to navigate between screens
+    $(document).on('keypress', function(e) {
+        // Check if the key pressed was Enter
+        if (e.which === 13 || e.keyCode === 13) {
+            // Check which screen is currently active
+            if (game.currentScreen === 'welcome-screen' && $('#player-name-input').is(':focus')) {
+                $('#instructions-btn').click();
+            } else if (game.currentScreen === 'instructions-screen') {
+                $('#play-game-btn').click();
+            }
+        }
+    });
+
     // Hide error when user starts typing
     $nameInput.on('input', function() {
         $nameError.hide()
